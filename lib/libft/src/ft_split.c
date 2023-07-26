@@ -6,7 +6,7 @@
 /*   By: uclement <uclement@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/11/28 12:43:36 by uclement          #+#    #+#             */
-/*   Updated: 2023/01/15 13:39:36 by uclement         ###   ########.fr       */
+/*   Updated: 2023/07/26 10:52:25 by uclement         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -96,6 +96,6 @@ char	**ft_split(char const *s, char c)
 		}
 		i++;
 	}
-	str[j] = 0;
+	str[j] = NULL;
 	return (str);
 }
