@@ -6,7 +6,7 @@
 /*   By: uclement <uclement@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/07/25 15:56:00 by uclement          #+#    #+#             */
-/*   Updated: 2023/07/25 16:14:02 by uclement         ###   ########.fr       */
+/*   Updated: 2023/07/27 10:10:32 by uclement         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,11 @@
 # include <stdio.h>
 # include "libft.h"
 
-
+typedef struct s_arg
+{
+	char	**av;
+	char	**ev;
+	char	**path;
+}	t_arg;
 
 #endif

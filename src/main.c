@@ -6,136 +6,132 @@
 /*   By: uclement <uclement@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/07/25 15:53:48 by uclement          #+#    #+#             */
-/*   Updated: 2023/07/26 13:38:54 by uclement         ###   ########.fr       */
+/*   Updated: 2023/07/27 14:23:59 by uclement         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex.h"
 
-// void	cmd(char **argv, char **envp)
-// {
-// 	int		i;
-// 	char	**mypath;
-// 	char	**mycmdarg;
-// 	char	*cmd;
+void free_lst(char **str)
+{
+	int i;
 
-// 	mycmdarg = ft_split(argv[1], ' ');
-// 	i = 0;
-// 	i = 0;
-// 	while (envp[i])
-// 	{
-// 		if (ft_strncmp(envp[i], "PATH", 4) == 0)
-// 			break ;
-// 		i++;
-// 	}
-// 	mypath = ft_split(&envp[i][5], ':');
-// 	i = 0;
-// 	while (mypath[i])
-// 	{
-// 		mypath[i] = ft_strjoin(mypath[i], "/");
-// 		cmd = ft_strjoin(mypath[i], mycmdarg[0]);
-// 		if (execve(cmd, mycmdarg, envp) >= 0)
-// 			exit(0);
-// 		i++;
-// 		free(cmd);
-// 	}
-// }
+	i = 0;
+	while (str[i])
+	{
+		free(str[i]);
+		i++;
+	}
+	free(str);
+}
 
-void p_process(char **argv, char **envp, int f2, int *fd)
+
+void p_process(t_arg arg, int f2, int *fd)
 {
 	int		i;
-	char	**mypath;
+	int		status;
 	char	**mycmdarg;
 	char	*cmd;
-	int status;
 
 	waitpid(-1, &status, 0);
 	dup2(f2, STDOUT_FILENO);
 	dup2(fd[0], STDIN_FILENO);
 	close(fd[1]);
+	mycmdarg =	ft_split(arg.av[3], ' ');
 	i = 0;
-	i = 0;
-	mycmdarg =	ft_split(argv[2], ' ');
-	while (envp[i])
-	{
-		if (ft_strncmp(envp[i], "PATH", 4) == 0)
-			break ;
-		i++;
-	}
-	mypath = ft_split(&envp[i][5], ':');
-	i = 0;
+	close(fd[0]);
 	close(f2);
-	while (mypath[i])
+	while (arg.path[i])
 	{
-		mypath[i] = ft_strjoin(mypath[i], "/");
-		cmd = ft_strjoin(mypath[i], mycmdarg[0]);
-		if (execve(cmd, mycmdarg, envp) >= 0)
-			exit(0);
+		arg.path[i] = ft_strjoin(arg.path[i], "/");
+		cmd = ft_strjoin(arg.path[i], mycmdarg[0]);
+		if (access(cmd, X_OK) == 0)
+			break ;
 		i++;
 		free(cmd);
 	}
+	execve(cmd, mycmdarg, arg.ev);
+		// perror("errorp");
 }
 
-void c_process(char **argv, char **envp, int f1, int *fd)
+void c_process (t_arg arg, int f1, int *fd)
 {
 	int		i;
-	char	**mypath;
 	char	**mycmdarg;
 	char	*cmd;
 
 	dup2(f1, STDIN_FILENO);
 	dup2(fd[1], STDOUT_FILENO);
 	close(fd[0]);
+	mycmdarg =	ft_split(arg.av[2], ' ');
 	i = 0;
-	i = 0;
-	mycmdarg =	ft_split(argv[3], ' ');
-	while (envp[i])
-	{
-		if (ft_strncmp(envp[i], "PATH", 4) == 0)
-			break ;
-		i++;
-	}
-	mypath = ft_split(&envp[i][5], ':');
-	i = 0;
+	close(fd[1]);
 	close(f1);
-	while (mypath[i])
+	while (arg.path[i])
 	{
-		mypath[i] = ft_strjoin(mypath[i], "/");
-		cmd = ft_strjoin(mypath[i], mycmdarg[0]);
-		if (execve(cmd, mycmdarg, envp) >= 0)
-			exit(0);
+		arg.path[i] = ft_strjoin(arg.path[i], "/");
+		cmd = ft_strjoin(arg.path[i], mycmdarg[0]);
+		if (access(cmd, X_OK) == 0)
+			break ;
 		i++;
 		free(cmd);
 	}
+	execve(cmd, mycmdarg, arg.ev);
 }
 
-
-void pipex(char **argv, char **envp, int f1, int f2) //ajout f1 et f2
+void pipex(t_arg arg, int f1, int f2)
 {
-	int pid;
 	int	fd[2];
+	int	pid;
 	
-	pipe(fd);
+	if (pipe(fd) == -1)
+		perror("Error pipe");
 	pid = fork();
-	if (pid != 0 ) // parent
+	if (pid == 0 )
 	{
-		p_process(argv, envp, f2, fd);
+		close(f2);
+		c_process(arg, f1, fd);
 	}
-	else if (pid == 0 )
-		c_process(argv, envp, f1, fd);
+	if (pid != 0 )
+	{
+		close(f1);
+		p_process(arg, f2, fd);
+	}
+	close(fd[0]);
+	close(fd[1]);
+	close(f1);
+	close(f2);
+	free_lst(arg.path);
+}
+
+char **pathfinder(t_arg arg)
+{
+	int i;
+
+	i = 0;
+	while (arg.ev[i])
+		{
+			if (ft_strncmp(arg.ev[i], "PATH", 4) == 0)
+				break ;
+			i++;
+		}
+	return(ft_split(&arg.ev[i][5], ':'));
 }
 
 int	main(int argc, char **argv, char **envp)
 {
-	int f1;
-	int f2;
-	
-	if (argc <= 1)
-		return (0);
-	
-	f1 =  open(argv[1], O_RDONLY);
-	f2 =  open(argv[4], O_RDWR, 0644);
-	pipex(argv, envp, f1, f2);
-	
+	int		f1;
+	int		f2;
+	t_arg	arg;
 
+	arg.av = argv;
+	arg.ev = envp;
+	arg.path = pathfinder(arg);
+	if (argc != 5)
+		return (1);
+	if ((f1 = open(argv[1], O_RDONLY)) == -1)
+		perror("error open");
+	if ((f2 =  open(argv[4], O_CREAT | O_RDWR | O_TRUNC, 0644)) == -1)
+		perror("error open");
+	pipex(arg, f1, f2);
 }
